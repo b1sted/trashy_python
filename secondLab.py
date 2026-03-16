@@ -7,15 +7,30 @@ import numpy as np
 from scipy.optimize import linprog, milp, LinearConstraint, Bounds
 from pathlib import Path
 
-PRODUCTS  = ["Q1", "Q2"]
-RESOURCES = ["S1", "S2", "S3"]
-PROFIT    = np.array([3.0, 2.0])
-A         = np.array([[3., 1.],
-                       [2., 2.],
-                       [0., 3.]])
-B         = np.array([21., 30., 16.])
+# --- ТОЛЬКО ЭТОТ БЛОК ИЗМЕНЕН ---
+try:
+    n = int(input("Введите номер варианта (1-30): "))
+except:
+    n = 16
 
+if n % 2 != 0:
+    # Данные Таблицы 2.3 (нечетные)
+    PRODUCTS  = ["P1", "P2"]
+    RESOURCES = ["S1", "S2", "S3"]
+    PROFIT    = np.array([50.0, 40.0])
+    A         = np.array([[2., 5.], [8., 5.], [5., 6.]])
+    B         = np.array([20., 40., 30.])
+else:
+    # Данные Таблицы 2.4 (четные)
+    PRODUCTS  = ["Q1", "Q2"]
+    RESOURCES = ["S1", "S2", "S3"]
+    PROFIT    = np.array([3.0, 2.0])
+    A         = np.array([[3., 1.], [2., 2.], [0., 3.]])
+    B         = np.array([21., 30., 16.])
+# --------------------------------
 
+# ─── ФУНКЦИИ РЕШЕНИЯ ──────────────────────────────────────────
+# (ДАЛЕЕ ВЕСЬ ТВОЙ КОД БЕЗ ИЗМЕНЕНИЙ)
 def solve_lp(c, A_ub, b_ub, integer=False):
     if integer:
         res = milp(-c,
@@ -189,7 +204,7 @@ def build_report():
     L.append("")
     out_dir = Path(__file__).parent / "output" / "secondLab"
     dsep()
-    L.append(f"Файл с результатами: {out_dir / 'Lab_rabota_2_stud_N16.txt'}")
+    L.append(f"Файл с результатами: {out_dir / f'Lab_rabota_2_stud_N{n}.txt'}")
     L.append("Все расчёты выполнены.")
     dsep()
 
@@ -201,6 +216,6 @@ print(report)
 
 out_dir = Path(__file__).parent / "output" / "secondLab"
 out_dir.mkdir(parents=True, exist_ok=True)
-out_path = out_dir / "Lab_rabota_2_stud_N16.txt"
+out_path = out_dir / f"Lab_rabota_2_stud_N{n}.txt"
 with open(out_path, "w", encoding="utf-8") as f:
     f.write(report + "\n")
