@@ -1,36 +1,49 @@
 """
 Лабораторная работа 1
-Вариант 16
 Оптимизация и математические методы принятия решений
 """
 
 import os
 import numpy as np
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-OUTPUT_DIR = os.path.join("output", "firstLab")
+# ─── ЗАПРОС ВАРИАНТА ──────────────────────────────────────────
+try:
+    n = int(input("Введите номер варианта (1-30): "))
+except ValueError:
+    n = 16
+    print("Ошибка ввода. Использован вариант по умолчанию: 16")
+
+# Определяем режим решения (стр. 14 методички)
+# "для нечетных вариантов — MIN, для четных вариантов — MAX"
+MODE = "MAX" if n % 2 == 0 else "MIN"
+
+OUTPUT_DIR = os.path.join("output", f"firstLab_v{n}")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-TXT_PATH = os.path.join(OUTPUT_DIR, "Lab_rabota_1_stud_N16.txt")
+TXT_PATH = os.path.join(OUTPUT_DIR, f"Lab_rabota_1_stud_N{n}.txt")
+
 
 # ─── вспомогательные функции ──────────────────────────────────
-
+# (оставляем ваши функции без изменений)
 def mat2str(m, fmt='{:10.4f}'):
-    """Матрица → строка с выравниванием по столбцам."""
     m = np.atleast_2d(m)
     return '\n'.join('  ' + '  '.join(fmt.format(v) for v in row) for row in m)
+
 
 def minor(M, i, j):
     sub = np.delete(np.delete(M, i, axis=0), j, axis=1)
     return np.linalg.det(sub)
 
+
 def algdop(M, i, j):
     return ((-1) ** (i + j)) * minor(M, i, j)
 
+
 def gauss_jordan(A, B):
-    """Метод Гаусса-Жордана (приведение расширенной матрицы к RREF)."""
     mat = np.hstack([A, B]).astype(float)
     nr, nc = mat.shape
     pivot_row = 0
@@ -46,15 +59,17 @@ def gauss_jordan(A, B):
         pivot_row += 1
     return mat
 
+
 def write(f, text=''):
     print(text)
     f.write(text + '\n')
 
+
 # ══════════════════════════════════════════════════════════════
 with open(TXT_PATH, 'w', encoding='utf-8') as f:
-
     write(f, '=' * 70)
-    write(f, 'Лабораторная работа 1. Вариант 16')
+    write(f, f'Лабораторная работа 1. ВАРИАНТ №{n}')
+    write(f, f'Режим поиска целевой функции: {MODE}')
     write(f, '=' * 70)
 
     # ─────────────────────────────────────────────────────────
@@ -64,19 +79,20 @@ with open(TXT_PATH, 'w', encoding='utf-8') as f:
     write(f, 'Пункт 1. Исходные матрицы A и B')
     write(f, '─' * 70)
 
-    n = 16
-
     Aish = np.array([
-        [3,  4,  3,  8, 9],
-        [5,  2,  1,  4, 3],
-        [4,  9,  4,  6, 7],
-        [3,  4, 11,  5, 4],
-        [8,  9,  8,  7, 1]
+        [3, 4, 3, 8, 9],
+        [5, 2, 1, 4, 3],
+        [4, 9, 4, 6, 7],
+        [3, 4, 11, 5, 4],
+        [8, 9, 8, 7, 1]
     ], dtype=float)
     Bish = np.array([[61], [43], [79], [87], [58]], dtype=float)
 
-    A = Aish + (2 * n - 1)   # + 31
-    B = Bish + (9 * n - 4)   # + 140
+    # Формирование данных согласно варианту (стр. 10 методички)
+    A = Aish + (2 * n - 1)
+    B = Bish + (9 * n - 4)
+
+    # ... ДАЛЕЕ ВАШ КОД БЕЗ ИЗМЕНЕНИЙ ДО 12 ПУНКТА ...
 
     write(f, '\nМатрица A (5×5):')
     write(f, mat2str(A, '{:5.0f}'))
@@ -298,7 +314,7 @@ with open(TXT_PATH, 'w', encoding='utf-8') as f:
     ax1.set_title(f'Функция принадлежности μ(AA), вариант {n}')
     plt.tight_layout()
 
-    graf_path = os.path.join(OUTPUT_DIR, 'Graf_LabRab_1_v16.png')
+    graf_path = os.path.join(OUTPUT_DIR, f'Graf_LabRab_1_v{n}.png')
     fig1.savefig(graf_path, dpi=120)
     plt.close(fig1)
 
@@ -369,7 +385,7 @@ with open(TXT_PATH, 'w', encoding='utf-8') as f:
     ax2.set_xlim(-4, 3)
     plt.tight_layout()
 
-    resh_path = os.path.join(OUTPUT_DIR, 'Resh_LabRab_1_v16.png')
+    resh_path = os.path.join(OUTPUT_DIR, f'Resh_LabRab_1_v{n}.png')
     fig2.savefig(resh_path, dpi=120)
     plt.close(fig2)
 
