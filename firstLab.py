@@ -246,6 +246,11 @@ with open(TXT_PATH, 'w', encoding='utf-8') as f:
             write(f, f'  Знак     (-1)^({i+1}+{j+1}) = {sign:+d}')
             write(f, f'  Алг. доп. A({i+1},{j+1}) = {sign:+d} * ({Mij:.4f}) = {Aij:.4f}')
 
+    write(f, '\n' + '─' * 40)
+    write(f, 'Итоговая матрица алгебраических дополнений:')
+    Acof = np.array([[algdop(A, i, j) for j in range(5)] for i in range(5)])
+    write(f, mat2str(Acof, '{:12.4f}'))
+
     check = sum(A[i, 0] * algdop(A, i, 0) for i in range(5))
     write(f, f'\nПроверка разложением по 1-му столбцу:')
     write(f, f'  Σ a(i,1) * A(i,1) = {check:.4f}')
