@@ -201,7 +201,9 @@ def build_report():
     L.append(f"  Ресурс {', '.join(surplus)} не исчерпан, его расширение нецелесообразно.")
 
     L.append("")
-    out_dir = Path(__file__).parent / "output" / "secondLab"
+    project_root = Path(__file__).parent.parent.parent
+    out_dir = project_root / "output" / "secondLab"
+
     dsep()
     L.append(f"Файл с результатами: {out_dir / f'Lab_rabota_2_stud_N{n}.txt'}")
     L.append("Все расчёты выполнены.")
@@ -213,8 +215,11 @@ def build_report():
 report = build_report()
 print(report)
 
-out_dir = Path(__file__).parent / "output" / "secondLab"
+project_root = Path(__file__).parent.parent.parent
+out_dir = project_root / "output" / "secondLab"
+
 out_dir.mkdir(parents=True, exist_ok=True)
 out_path = out_dir / f"Lab_rabota_2_stud_N{n}.txt"
+
 with open(out_path, "w", encoding="utf-8") as f:
     f.write(report + "\n")

@@ -43,7 +43,7 @@ except ValueError:
     sys.exit(1)
 
 # ─── Вывод (консоль + файл) ───────────────────────────────────────────────────
-OUTPUT_DIR = os.path.join("output", "eightPractice")
+OUTPUT_DIR = os.path.join("../../output", "eightPractice")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, f"Practice_8_N{VARIANT_NUMBER}.txt")
 

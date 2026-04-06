@@ -21,7 +21,7 @@ except ValueError:
 # "для нечетных вариантов — MIN, для четных вариантов — MAX"
 MODE = "MAX" if n % 2 == 0 else "MIN"
 
-OUTPUT_DIR = os.path.join("output", f"firstLab_v{n}")
+OUTPUT_DIR = os.path.join("../../output/firstLab")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 TXT_PATH = os.path.join(OUTPUT_DIR, f"Lab_rabota_1_stud_N{n}.txt")

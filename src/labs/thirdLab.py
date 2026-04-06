@@ -264,7 +264,9 @@ def build_report(variant, weights, edges, graph_type, distances, dist,
     L.append(f"           суммарная взвешенная длина кабельных трасс минимальна.")
     L.append("")
 
-    out_dir = Path(__file__).parent / "output" / "thirdLab"
+    project_root = Path(__file__).parent.parent.parent
+    out_dir = project_root / "output" / "thirdLab"
+
     dsep()
     L.append(f"Файл с результатами: {out_dir / f'Lab_rabota_3_stud_N{variant}.txt'}")
     L.append("Все расчёты выполнены.")
@@ -330,9 +332,12 @@ def main():
     print("\n" + report)
 
     # 5. Сохраняем в файл автоматически
-    out_dir = Path(__file__).parent / "output" / "thirdLab"
+    project_root = Path(__file__).parent.parent.parent
+    out_dir = project_root / "output" / "thirdLab"
+
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"Lab_rabota_3_stud_N{variant}.txt"
+
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(report + "\n")
     print(f"\n  Результаты сохранены в файл: {out_path}")
