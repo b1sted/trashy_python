@@ -291,24 +291,39 @@ VARIANTS = {
 
 def normalize(data, maximize):
     """
-    Нормализация по принципу максимальной эффективности (формулы 6.5, 6.6).
-    maximize[j] == True  → a_hat = a / a_max
-    maximize[j] == False → a_hat = 1 - a / a_max
+    Исправленная нормализация по формулам 6.7 и 6.8 методички (стр. 46).
+    Гарантирует диапазон [0, 1] для каждого критерия.
     """
     n_rows = len(data)
     n_cols = len(data[0])
+
+    # Находим максимумы и минимумы для каждого столбца (критерия)
     a_max = [max(data[i][j] for i in range(n_rows)) for j in range(n_cols)]
+    a_min = [min(data[i][j] for i in range(n_rows)) for j in range(n_cols)]
 
     norm = []
     for i in range(n_rows):
         row = []
         for j in range(n_cols):
+            denom = a_max[j] - a_min[j]
+
+            # Защита от деления на ноль, если все значения в столбце одинаковые
+            if denom == 0:
+                row.append(1.0)
+                continue
+
             if maximize[j]:
-                row.append(data[i][j] / a_max[j])
+                # Формула 6.7: (a_ij - a_min) / (a_max - a_min)
+                # Чем ближе к максимуму, тем ближе к 1
+                row.append((data[i][j] - a_min[j]) / denom)
             else:
-                row.append(1.0 - data[i][j] / a_max[j])
+                # Формула 6.8: (a_max - a_ij) / (a_max - a_min)
+                # Чем ближе к минимуму, тем ближе к 1
+                row.append((a_max[j] - data[i][j]) / denom)
         norm.append(row)
-    return norm, a_max
+
+    # Возвращаем также a_min, чтобы потом корректно отобразить в отчете
+    return norm, a_max, a_min
 
 
 def solve(variant):
@@ -318,16 +333,17 @@ def solve(variant):
     weights = variant["weights"]
     maximize = variant["maximize"]
 
-    norm, a_max = normalize(data, maximize)
+    # normalize должна возвращать 3 значения!
+    norm, a_max, a_min = normalize(data, maximize)
 
-    # F_i = sum(lambda_j * a_hat_ij)
     F = []
     for i in range(len(rows)):
         fi = sum(weights[j] * norm[i][j] for j in range(len(cols)))
         F.append(fi)
 
     best_idx = F.index(max(F))
-    return norm, a_max, F, best_idx
+    # Возвращаем все 5 параметров для отчета
+    return norm, a_max, a_min, F, best_idx
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -335,21 +351,25 @@ def solve(variant):
 # ─────────────────────────────────────────────────────────────────
 
 def build_report(v_num, variant):
-    rows     = variant["rows"]
-    cols     = variant["cols"]
-    data     = variant["data"]
-    weights  = variant["weights"]
+    rows = variant["rows"]
+    cols = variant["cols"]
+    data = variant["data"]
+    weights = variant["weights"]
     maximize = variant["maximize"]
-    title    = variant["title"]
-    ans_lbl  = variant["answer_label"]
+    title = variant["title"]
+    ans_lbl = variant["answer_label"]
 
-    norm, a_max, F, best_idx = solve(variant)
+    # ВАЖНО: функция solve должна возвращать a_min
+    norm, a_max, a_min, F, best_idx = solve(variant)
 
-    W = 72
+    W = 85  # Немного увеличим ширину для красоты
     L = []
 
-    def sep():  L.append('-' * W)
-    def dsep(): L.append('=' * W)
+    def sep():
+        L.append('-' * W)
+
+    def dsep():
+        L.append('=' * W)
 
     dsep()
     L.append(f"{'Лабораторная работа 6':^{W}}")
@@ -360,27 +380,22 @@ def build_report(v_num, variant):
     # ── Пункт 1. Исходные данные ──────────────────────────────────
     L.append('')
     sep()
-    L.append('Пункт 1. Исходные данные')
+    L.append(' Пункт 1. Исходные данные')
     sep()
-    L.append('')
     L.append(f'  Вариант № {v_num}')
     L.append(f'  Задача: {title}')
     L.append('')
-    L.append(f'  Весовые коэффициенты:')
+    L.append(f'  Весовые коэффициенты критериев:')
     for j, col in enumerate(cols):
-        L.append(f'    λ{j+1} = {weights[j]}  ({col})')
-    L.append(f'  Сумма весов: {sum(weights):.4f}')
+        sign = '[+]' if maximize[j] else '[−]'
+        L.append(f'    λ{j + 1} = {weights[j]:<6} | {sign} {col}')
+    L.append(f'  Проверка суммы весов: {sum(weights):.4f}')
     L.append('')
-    L.append('  Критерии (+ максимизируется, − минимизируется):')
-    for j, col in enumerate(cols):
-        sign = '+' if maximize[j] else '−'
-        L.append(f'    [{sign}] {col}')
 
     # Таблица исходных данных
-    L.append('')
-    col_w = 14
-    row_w = 20
-    header = f"  {'Вариант':<{row_w}}" + ''.join(f"{c[:col_w-1]:>{col_w}}" for c in cols)
+    col_w = 12
+    row_w = 22
+    header = f"  {'Вариант':<{row_w}}" + ''.join(f"{c[:col_w - 1]:>{col_w}}" for c in cols)
     L.append(header)
     sep()
     for i, row_name in enumerate(rows):
@@ -389,28 +404,29 @@ def build_report(v_num, variant):
             line += f"{data[i][j]:>{col_w}.4g}"
         L.append(line)
     sep()
-    L.append('')
-    L.append(f"  a+_j (максимумы столбцов):")
-    for j, col in enumerate(cols):
-        L.append(f"    a+_{j+1} = {a_max[j]:.4g}  ({col})")
 
-    # ── Пункт 2. Нормализация критериев ───────────────────────────
+    # ── Пункт 2. Нормализация ─────────────────────────────────────
     L.append('')
     sep()
-    L.append('Пункт 2. Нормализация критериев')
+    L.append(' Пункт 2. Нормализация критериев (Линейный интервальный метод)')
     sep()
     L.append('')
-    L.append('  Формулы (принцип максимальной эффективности):')
+    L.append('  Обоснование: Используем формулы 6.7 и 6.8 (стр. 46 методички),')
+    L.append('  так как они приводят все критерии к строгому диапазону [0, 1],')
+    L.append('  где 0 — худший результат в столбце, а 1 — лучший.')
+    L.append('')
+
+    L.append('  Применяемые формулы:')
+    L.append('    Для максимизации (+): â_ij = (a_ij − a_min_j) / (a_max_j − a_min_j)')
+    L.append('    Для минимизации (−): â_ij = (a_max_j − a_ij) / (a_max_j − a_min_j)')
+    L.append('')
+
+    L.append('  Параметры столбцов:')
     for j in range(len(cols)):
-        if maximize[j]:
-            L.append(f'    â_i{j+1} = a_i{j+1} / a+_{j+1}          '
-                     f'(критерий максимизируется)')
-        else:
-            L.append(f'    â_i{j+1} = 1 − a_i{j+1} / a+_{j+1}      '
-                     f'(критерий минимизируется)')
-
+        L.append(f"    Критерий {j + 1}: max={a_max[j]:.4g}, min={a_min[j]:.4g}")
     L.append('')
-    header = f"  {'Вариант':<{row_w}}" + ''.join(f"{c[:col_w-1]:>{col_w}}" for c in cols)
+
+    L.append(f"  Матрица нормализованных значений â_ij:")
     L.append(header)
     sep()
     for i, row_name in enumerate(rows):
@@ -420,46 +436,40 @@ def build_report(v_num, variant):
         L.append(line)
     sep()
 
-    # ── Пункт 3. Вычисление целевой функции ──────────────────────
+    # ── Пункт 3. Целевая функция ──────────────────────────────────
     L.append('')
     sep()
-    L.append('Пункт 3. Вычисление аддитивной целевой функции')
+    L.append(' Пункт 3. Вычисление аддитивной целевой функции F_i')
     sep()
     L.append('')
-    L.append('  Формула:')
-    lam_str = ' + '.join(f'λ{j+1}·â_i{j+1}' for j in range(len(cols)))
-    L.append(f'    F_i = {lam_str}')
+    lam_str = ' + '.join(f'λ{j + 1}·â_i{j + 1}' for j in range(len(cols)))
+    L.append(f'  Формула: F_i = {lam_str}')
     L.append('')
 
     for i, row_name in enumerate(rows):
-        terms = [f'{weights[j]:.3f}·{norm[i][j]:.4f}' for j in range(len(cols))]
-        marker = '  ← max' if i == best_idx else ''
+        terms = [f'{weights[j]:.3f}·{norm[i][j]:.3f}' for j in range(len(cols))]
+        marker = '  <--- MAX' if i == best_idx else ''
         L.append(f'  F({row_name}):')
         L.append(f'    = ' + ' + '.join(terms))
         L.append(f'    = {F[i]:.6f}{marker}')
         L.append('')
 
-    # ── Пункт 4. Итоговая таблица и ответ ────────────────────────
+    # ── Пункт 4. Результат ────────────────────────────────────────
     sep()
-    L.append('Пункт 4. Итоговая таблица и результат')
+    L.append(' Пункт 4. Итоговая оценка вариантов')
     sep()
     L.append('')
-
-    hline = f"  +{'─'*row_w}+{'─'*10}+"
-    L.append(hline)
-    L.append(f"  | {'Вариант':<{row_w-1}}| {'F_i':^8} |")
-    L.append(hline)
+    res_table_w = row_w + 15
+    L.append(f"  {'Название варианта':<{row_w}} | {'Интегральный показатель F_i':^25}")
+    L.append(f"  {'-' * (row_w)} | {'-' * 25}")
     for i, row_name in enumerate(rows):
-        marker = ' ←' if i == best_idx else '  '
-        L.append(f"  | {row_name:<{row_w-1}}| {F[i]:^8.4f} |{marker}")
-    L.append(hline)
+        star = '(*)' if i == best_idx else '   '
+        L.append(f"  {row_name:<{row_w}} | {F[i]:^25.6f} {star}")
+
     L.append('')
-    L.append(f'  Fmax = F({rows[best_idx]}) = {F[best_idx]:.6f}')
+    L.append(f'  Наилучшее значение целевой функции: F_max = {max(F):.6f}')
+    L.append(f'  ОТВЕТ: Согласно аддитивной модели, {ans_lbl} — {rows[best_idx]}.')
     L.append('')
-    L.append(f'  ОТВЕТ: {ans_lbl} — {rows[best_idx]}')
-    L.append('')
-    dsep()
-    L.append('Все расчёты выполнены.')
     dsep()
 
     return '\n'.join(L)
